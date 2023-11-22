@@ -1,0 +1,6 @@
+{:deps {org.clojure/clojure    {:mvn/version "1.11.1"}
+        com.datomic/peer       {:mvn/version "1.0.7021"}
+        org.slf4j/slf4j-simple {:mvn/version "2.0.9"}}
+
+ :aliases {:repl {:extra-deps { com.bhauman/rebel-readline {:mvn/version "0.1.4" }}
+                  :main-opts  ["-m" "rebel-readline.main"]}}}

@@ -1,0 +1,24 @@
+services:
+
+  datomic-transactor:
+    build: ./docker/transactor
+    environment:
+      BOOT_CONFIG_EDN: /usr/config/dev/config.edn
+    volumes:
+      - ./config:/usr/config
+    ports:
+      - '4334:4334'
+
+  datomic-console:
+    build: ./docker/console
+    links:
+      - datomic-transactor
+    environment:
+      DB_URI: datomic:dev://datomic-transactor:4334/
+    ports:
+      - '8080:8080'
+
+  datomic-tools:
+    build: ./docker/tools
+    links:
+      - datomic-transactor
