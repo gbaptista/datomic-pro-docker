@@ -14,7 +14,7 @@ services:
     links:
       - datomic-transactor
     environment:
-      DB_URI: datomic:dev://datomic-transactor:4334/
+      DB_URI: datomic:dev://datomic-transactor:4334/?password=unsafe
     ports:
       - '8080:8080'
 

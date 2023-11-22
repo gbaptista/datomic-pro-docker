@@ -24,7 +24,7 @@ services:
       - datomic-transactor
       - datomic-storage
     environment:
-      DB_URI: "datomic:sql://?jdbc:postgresql://datomic-storage:5432?user=datomic-user&password=unsafe"
+      DB_URI: datomic:sql://?jdbc:postgresql://datomic-storage:5432?user=datomic-user&password=unsafe
     ports:
       - '8080:8080'
 
