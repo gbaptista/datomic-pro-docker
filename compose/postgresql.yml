@@ -21,15 +21,13 @@ services:
   datomic-console:
     build: ./docker/console
     links:
-      - datomic-transactor
       - datomic-storage
     environment:
-      DB_URI: datomic:sql://?jdbc:postgresql://datomic-storage:5432?user=datomic-user&password=unsafe
+      DB_URI: datomic:sql://?jdbc:postgresql://datomic-storage:5432/my-datomic?user=datomic-user&password=unsafe
     ports:
       - '8080:8080'
 
   datomic-tools:
     build: ./docker/tools
     links:
-      - datomic-transactor
       - datomic-storage

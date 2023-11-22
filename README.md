@@ -51,6 +51,12 @@ Copy the Docker Compose file:
 cp compose/postgresql.yml docker-compose.yml
 ```
 
+Run the Datomic Storage Service (PostgreSQL):
+
+```sh
+docker compose up datomic-storage
+```
+
 Create the table for Datomic:
 
 ```sh
