@@ -38,7 +38,7 @@ docker compose up datomic-transactor
 To restore a backup of the [MusicBrainz](https://musicbrainz.org) Sample Database:
 
 ```sh
-docker compose run datomic-tools ./bin/datomic restore-db file:/usr/mbrainz-1968-1973 datomic:dev://datomic-transactor:4334/my-datomic?password=unsafe
+docker compose run datomic-tools ./bin/datomic restore-db file:/usr/mbrainz-1968-1973 "datomic:dev://datomic-transactor:4334/my-datomic?password=unsafe"
 ````
 
 ### PostgreSQL
