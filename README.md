@@ -97,7 +97,7 @@ Using the API:
 (require '[datomic.api :as d])
 
 ; If you are using Dev Mode:
-(def db (d/db (d/connect "datomic:dev://localhost:4334/my-datomic")))
+(def db (d/db (d/connect "datomic:dev://datomic-transactor:4334/my-datomic/?password=unsafe")))
 
 ; If you are using PostgreSQL:
 (def db (d/db (d/connect "datomic:sql://?jdbc:postgresql://datomic-storage:5432/my-datomic?user=datomic-user&password=unsafe")))
@@ -112,7 +112,7 @@ Using the API:
          [?e :artist/gender ?geid]
          [?geid :db/ident ?gender]]
      db
-    "Janis Joplin")
+    "Jimi Hendrix")
 ```
 
 To exit the REPL, press Ctrl+D or type:
