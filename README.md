@@ -120,6 +120,11 @@ To exit the REPL, press Ctrl+D or type:
 :repl/quit
 ```
 
+Sometimes the REPL insists on hanging; in that case, you can kill the container:
+```sh
+docker compose kill datomic-tools
+```
+
 Dependencies reference:
 
 - [org.clojure/clojure](https://central.sonatype.com/artifact/org.clojure/clojure/overview)
