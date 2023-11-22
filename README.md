@@ -8,7 +8,7 @@ These examples are designed for prototyping and educational purposes; they shoul
 
 _This is not an official Datomic project or documentation and is not affiliated with Datomic in any way._
 
-- [Storage Services and Transactor](#transactor-and-storage-services)
+- [Storage Services and Transactor](#storage-services-and-transactor)
   - [Dev Mode](#dev-mode)
   - [PostgreSQL](#postgresql)
 - [Tools and Utilities](#tools-and-utilities)
@@ -38,7 +38,7 @@ docker compose up datomic-transactor
 To restore a backup of the [MusicBrainz](https://musicbrainz.org) Sample Database:
 
 ```sh
-docker compose run datomic-tools ./bin/datomic restore-db file:/usr/mbrainz-1968-1973 datomic:dev://datomic-transactor:4334/my-datomic
+docker compose run datomic-tools ./bin/datomic restore-db file:/usr/mbrainz-1968-1973 datomic:dev://datomic-transactor:4334/my-datomic?password=unsafe
 ````
 
 ### PostgreSQL

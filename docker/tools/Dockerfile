@@ -1,6 +1,6 @@
 FROM clojure:temurin-21-tools-deps-bookworm-slim
 
-RUN apt-get update && apt-get install -y curl unzip postgresql-client && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y curl unzip iputils-ping postgresql-client && rm -rf /var/lib/apt/lists/*
 
 RUN curl -s https://raw.githubusercontent.com/babashka/babashka/master/install | bash
 
