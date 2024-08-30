@@ -17,11 +17,11 @@ _This is not an official Datomic project or documentation and is not affiliated 
 
 ## Storage Services and Transactor
 
-Official Documentation: [Storage Services](https://docs.datomic.com/pro/overview/storage.html)
+Official Documentation: [Setting up Storage Services](https://docs.datomic.com/operation/storage.html)
 
 ### Dev Mode
 
-Official Documentation: [Provisioning dev mode](https://docs.datomic.com/pro/overview/storage.html#provisioning-dev-mode)
+Official Documentation: [Dev Mode](https://docs.datomic.com/operation/storage.html#dev-mode)
 
 Copy the Docker Compose file:
 
@@ -43,7 +43,7 @@ docker compose run datomic-tools ./bin/datomic restore-db file:/usr/mbrainz-1968
 
 ### PostgreSQL
 
-Official Documentation [Provisioning a SQL database](https://docs.datomic.com/pro/overview/storage.html#sql-database)
+Official Documentation [SQL Database](https://docs.datomic.com/operation/storage.html#sql-database)
 
 Copy the Docker Compose file:
 
@@ -81,7 +81,7 @@ docker compose run datomic-tools ./bin/datomic restore-db file:/usr/mbrainz-1968
 
 ### Datomic Console
 
-To run [Datomic Console](https://docs.datomic.com/pro/other-tools/console.html):
+To run [Datomic Console](https://docs.datomic.com/resources/console.html):
 
 ```sh
 docker compose up datomic-console
@@ -98,7 +98,7 @@ Starting a REPL:
 docker compose run datomic-tools clojure -M:repl
 ````
 
-Documentation: [Getting Started](https://docs.datomic.com/pro/getting-started/brief-overview.html)
+Documentation: [Getting Started](https://docs.datomic.com/peer-tutorial/connect-to-a-database.html)
 
 Require the API and set the appropriate `db-uri`:
 
@@ -188,4 +188,5 @@ Dependencies reference:
 - [org.clojure/clojure](https://central.sonatype.com/artifact/org.clojure/clojure/overview)
 - [com.datomic/peer](https://central.sonatype.com/artifact/com.datomic/peer/overview)
 - [org.postgresql/postgresql](https://central.sonatype.com/artifact/org.postgresql/postgresql)
+- [org.slf4j/slf4j-simple](https://central.sonatype.com/artifact/org.slf4j/slf4j-simple)
 - [com.bhauman/rebel-readline](https://clojars.org/com.bhauman/rebel-readline)
