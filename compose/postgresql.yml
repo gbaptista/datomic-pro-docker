@@ -1,7 +1,7 @@
 services:
 
   datomic-storage:
-    image: postgres:16.1-bookworm
+    image: postgres:16.4-bookworm
     environment:
       POSTGRES_DB: my-datomic
       POSTGRES_USER: datomic-user
