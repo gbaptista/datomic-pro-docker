@@ -18,6 +18,19 @@ services:
     ports:
       - '4334:4334'
 
+  datomic-peer-server:
+    build: ./docker/peer-server
+    links:
+      - datomic-storage
+    environment:
+      PORT: 8998
+      DATOMIC_DATABASE: my-datomic-database
+      DATOMIC_STORAGE_URI: datomic:sql://my-datomic-database?jdbc:postgresql://datomic-storage:5432/my-datomic-storage?user=datomic-user&password=unsafe
+      DATOMIC_ACCESS_KEY: unsafe-key
+      DATOMIC_SECRET: unsafe-secret
+    ports:
+      - 8998:8998
+
   datomic-console:
     build: ./docker/console
     links:
@@ -31,3 +44,4 @@ services:
     build: ./docker/tools
     links:
       - datomic-storage
+      - datomic-peer-server
