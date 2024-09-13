@@ -3,7 +3,7 @@ services:
   datomic-storage:
     image: postgres:16.4-bookworm
     environment:
-      POSTGRES_DB: my-datomic
+      POSTGRES_DB: my-datomic-storage
       POSTGRES_USER: datomic-user
       POSTGRES_PASSWORD: unsafe
     ports:
@@ -23,7 +23,7 @@ services:
     links:
       - datomic-storage
     environment:
-      DB_URI: datomic:sql://?jdbc:postgresql://datomic-storage:5432/my-datomic?user=datomic-user&password=unsafe
+      DB_URI: datomic:sql://my-datomic-database?jdbc:postgresql://datomic-storage:5432/my-datomic-storage?user=datomic-user&password=unsafe
     ports:
       - '8080:8080'
 

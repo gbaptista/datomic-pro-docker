@@ -38,7 +38,7 @@ docker compose up datomic-transactor
 To restore a backup of the [MusicBrainz](https://musicbrainz.org) Sample Database:
 
 ```sh
-docker compose run datomic-tools ./bin/datomic restore-db file:/usr/mbrainz-1968-1973 "datomic:dev://datomic-transactor:4334/my-datomic?password=unsafe"
+docker compose run datomic-tools ./bin/datomic restore-db file:/usr/mbrainz-1968-1973 "datomic:dev://datomic-transactor:4334/my-datomic-database?password=unsafe"
 ````
 
 ### PostgreSQL
@@ -60,7 +60,7 @@ docker compose up datomic-storage
 Create the table for Datomic:
 
 ```sh
-docker compose run datomic-tools psql -f bin/sql/postgres-table.sql -h datomic-storage -U datomic-user -d my-datomic
+docker compose run datomic-tools psql -f bin/sql/postgres-table.sql -h datomic-storage -U datomic-user -d my-datomic-storage
 ```
 
 You will be prompted for a password, which is `unsafe`.
@@ -74,7 +74,7 @@ docker compose up datomic-transactor
 To restore a backup of the [MusicBrainz](https://musicbrainz.org) Sample Database:
 
 ```sh
-docker compose run datomic-tools ./bin/datomic restore-db file:/usr/mbrainz-1968-1973 "datomic:sql://?jdbc:postgresql://datomic-storage:5432/my-datomic?user=datomic-user&password=unsafe"
+docker compose run datomic-tools ./bin/datomic restore-db file:/usr/mbrainz-1968-1973 "datomic:sql://my-datomic-database?jdbc:postgresql://datomic-storage:5432/my-datomic-storage?user=datomic-user&password=unsafe"
 ````
 
 ## Tools and Utilities
@@ -106,10 +106,10 @@ Require the API and set the appropriate `db-uri`:
 (require '[datomic.api :as d])
 
 ; If you are using Dev Mode:
-(def db-uri "datomic:dev://datomic-transactor:4334/my-datomic/?password=unsafe")
+(def db-uri "datomic:dev://datomic-transactor:4334/my-datomic-database/?password=unsafe")
 
 ; If you are using PostgreSQL:
-(def db-uri "datomic:sql://?jdbc:postgresql://datomic-storage:5432/my-datomic?user=datomic-user&password=unsafe")
+(def db-uri "datomic:sql://my-datomic-database?jdbc:postgresql://datomic-storage:5432/my-datomic-storage?user=datomic-user&password=unsafe")
 ```
 
 If you have restored a backup of the [MusicBrainz](https://musicbrainz.org) sample database:
