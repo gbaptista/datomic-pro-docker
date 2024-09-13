@@ -14,6 +14,7 @@ _This is not an official Datomic project or documentation and is not affiliated 
 - [Tools and Utilities](#tools-and-utilities)
   - [Datomic Console](#datomic-console)
   - [REPL](#repl)
+- [Peer Server](#peer-server)
 
 ## Storage Services and Transactor
 
@@ -38,7 +39,7 @@ docker compose up datomic-transactor
 To restore a backup of the [MusicBrainz](https://musicbrainz.org) Sample Database:
 
 ```sh
-docker compose run datomic-tools ./bin/datomic restore-db file:/usr/mbrainz-1968-1973 "datomic:dev://datomic-transactor:4334/my-datomic?password=unsafe"
+docker compose run datomic-tools ./bin/datomic restore-db file:/usr/mbrainz-1968-1973 "datomic:dev://datomic-transactor:4334/my-datomic-database?password=unsafe"
 ````
 
 ### PostgreSQL
@@ -60,7 +61,7 @@ docker compose up datomic-storage
 Create the table for Datomic:
 
 ```sh
-docker compose run datomic-tools psql -f bin/sql/postgres-table.sql -h datomic-storage -U datomic-user -d my-datomic
+docker compose run datomic-tools psql -f bin/sql/postgres-table.sql -h datomic-storage -U datomic-user -d my-datomic-storage
 ```
 
 You will be prompted for a password, which is `unsafe`.
@@ -74,7 +75,7 @@ docker compose up datomic-transactor
 To restore a backup of the [MusicBrainz](https://musicbrainz.org) Sample Database:
 
 ```sh
-docker compose run datomic-tools ./bin/datomic restore-db file:/usr/mbrainz-1968-1973 "datomic:sql://?jdbc:postgresql://datomic-storage:5432/my-datomic?user=datomic-user&password=unsafe"
+docker compose run datomic-tools ./bin/datomic restore-db file:/usr/mbrainz-1968-1973 "datomic:sql://my-datomic-database?jdbc:postgresql://datomic-storage:5432/my-datomic-storage?user=datomic-user&password=unsafe"
 ````
 
 ## Tools and Utilities
@@ -106,10 +107,10 @@ Require the API and set the appropriate `db-uri`:
 (require '[datomic.api :as d])
 
 ; If you are using Dev Mode:
-(def db-uri "datomic:dev://datomic-transactor:4334/my-datomic/?password=unsafe")
+(def db-uri "datomic:dev://datomic-transactor:4334/my-datomic-database/?password=unsafe")
 
 ; If you are using PostgreSQL:
-(def db-uri "datomic:sql://?jdbc:postgresql://datomic-storage:5432/my-datomic?user=datomic-user&password=unsafe")
+(def db-uri "datomic:sql://my-datomic-database?jdbc:postgresql://datomic-storage:5432/my-datomic-storage?user=datomic-user&password=unsafe")
 ```
 
 If you have restored a backup of the [MusicBrainz](https://musicbrainz.org) sample database:
@@ -183,10 +184,62 @@ Sometimes the REPL insists on hanging; in that case, you can kill the container:
 docker compose kill datomic-tools
 ```
 
-Dependencies reference:
+## Peer Server
+
+After having a database created or restored, you can boot a Peer Server:
+```sh
+docker compose up datomic-peer-server
+```
+
+With the Peer Server running, you can start a REPL and connect to it:
+
+```sh
+docker compose run datomic-tools clojure -M:repl
+```
+
+```clojure
+(require '[datomic.client.api :as d])
+
+(def client (d/client
+              {:server-type :peer-server
+               :endpoint    "datomic-peer-server:8998"
+               :secret      "unsafe-secret"
+               :access-key  "unsafe-key"
+               :validate-hostnames false}))
+
+(def conn (d/connect client {:db-name "my-datomic-database"}))
+
+(def db (d/db conn))
+```
+
+If you created a new database from scratch:
+
+```clj
+(d/q '[:find ?e ?movie-title
+       :where [?e :movie/title ?movie-title]]
+     db)
+```
+
+If you have restored a backup of the [MusicBrainz](https://musicbrainz.org) sample database:
+```clj
+(d/q '[:find ?id ?type ?gender
+         :in $ ?name
+       :where
+         [?e :artist/name ?name]
+         [?e :artist/gid ?id]
+         [?e :artist/type ?teid]
+         [?teid :db/ident ?type]
+         [?e :artist/gender ?geid]
+         [?geid :db/ident ?gender]]
+     db
+    "Jimi Hendrix")
+```
+
+## Clojure Dependencies
 
 - [org.clojure/clojure](https://central.sonatype.com/artifact/org.clojure/clojure/overview)
 - [com.datomic/peer](https://central.sonatype.com/artifact/com.datomic/peer/overview)
+- [com.datomic/client-pro](https://central.sonatype.com/artifact/com.datomic/client-pro/overview)
 - [org.postgresql/postgresql](https://central.sonatype.com/artifact/org.postgresql/postgresql)
 - [org.slf4j/slf4j-simple](https://central.sonatype.com/artifact/org.slf4j/slf4j-simple)
 - [com.bhauman/rebel-readline](https://clojars.org/com.bhauman/rebel-readline)
