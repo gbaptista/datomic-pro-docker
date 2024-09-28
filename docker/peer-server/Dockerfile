@@ -12,8 +12,8 @@ RUN curl \
 
 WORKDIR /usr/datomic-pro
 
-CMD bin/run -m datomic.peer-server \
-      -h 0.0.0.0 \
-      -p "$PORT" \
-      -a "$DATOMIC_ACCESS_KEY,$DATOMIC_SECRET" \
-      -d "$DATOMIC_DATABASE,$DATOMIC_STORAGE_URI"
+COPY run.sh /usr/local/bin/run.sh
+
+RUN chmod +x /usr/local/bin/run.sh
+
+CMD ["/usr/local/bin/run.sh"]

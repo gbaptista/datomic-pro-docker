@@ -1,4 +1,4 @@
-{:deps {org.clojure/clojure       {:mvn/version "1.11.4"}
+{:deps {org.clojure/clojure       {:mvn/version "1.12.0"}
         com.datomic/peer          {:mvn/version "1.0.7187"}
         com.datomic/client-pro    {:mvn/version "1.0.81"}
         org.postgresql/postgresql {:mvn/version "42.7.4"}
