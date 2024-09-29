@@ -1,12 +1,88 @@
-# Datomic Pro Docker Compose
+# Datomic Pro for Docker
+
+Setting up Datomic Pro for Docker with Docker Compose.
+
+![The image features a logo with curved lines forming a whale, suggesting distortion and movement like space-time.](https://media.githubusercontent.com/media/gbaptista/assets/refs/heads/main/datomic-pro-docker/datomic-pro-docker-canvas.png)
 
 > _As of April 27, 2023, [Datomic Pro is free](https://blog.datomic.com/2023/04/datomic-is-free.html)!_
 
-This repository contains example Docker and Docker Compose files for running Datomic Pro locally on your computer.
-
-These examples are designed for prototyping and educational purposes; they should not be considered suitable or ready for production use.
-
 _This is not an official Datomic project or documentation and is not affiliated with Datomic in any way._
+
+## TL;DR and Quick Start
+
+```bash
+git clone https://github.com/gbaptista/datomic-pro-docker.git
+
+cd datomic-pro-docker
+
+cp compose/postgresql.yml docker-compose.yml
+
+docker compose up -d datomic-storage
+
+docker compose run datomic-tools psql \
+  -f bin/sql/postgres-table.sql \
+  -h datomic-storage \
+  -U datomic-user \
+  -d my-datomic-storage
+
+docker compose up -d datomic-transactor
+
+docker compose run datomic-tools clojure -M -e "$(cat <<'CLOJURE'
+  (require '[datomic.api :as d])
+  (d/create-database "datomic:sql://my-datomic-database?jdbc:postgresql://datomic-storage:5432/my-datomic-storage?user=datomic-user&password=unsafe")
+  (System/exit 0)
+CLOJURE
+)"
+```
+
+```bash
+docker compose run datomic-tools clojure -M:repl
+```
+
+```mermaid
+graph RL
+    Transactor --- Storage[("Storage")]
+    REPL("REPL (Peer)") -.- Storage
+    REPL --- Transactor
+```
+
+```clojure
+(require '[datomic.api :as d])
+
+(def conn (d/connect "datomic:sql://my-datomic-database?jdbc:postgresql://datomic-storage:5432/my-datomic-storage?user=datomic-user&password=unsafe"))
+
+@(d/transact conn [{:db/ident       :book/title
+                    :db/valueType   :db.type/string
+                    :db/cardinality :db.cardinality/one
+                    :db/doc         "The title of the book."}
+
+                   {:db/ident       :book/genre
+                    :db/valueType   :db.type/string
+                    :db/cardinality :db.cardinality/one
+                    :db/doc         "The genre of the book."}])
+
+@(d/transact conn [{:db/id      -1
+                    :book/title "The Tell-Tale Heart"
+                    :book/genre "Horror"}]
+
+(def db (d/db conn))
+
+(d/q '[:find ?e ?title ?genre
+       :where [?e :book/title ?title]
+              [?e :book/genre ?genre]]
+     db)
+```
+
+## Index
+
+- Todo
+
+## Flavors
+
+### Dev Mode
+
+
+## Utilities
 
 - [Storage Services and Transactor](#storage-services-and-transactor)
   - [Dev Mode](#dev-mode)
