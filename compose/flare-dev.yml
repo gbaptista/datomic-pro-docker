@@ -29,22 +29,16 @@ services:
       DATOMIC_DATABASE: my-datomic-database
       DATOMIC_STORAGE_URI: datomic:sql://my-datomic-database?jdbc:postgresql://datomic-storage:5432/my-datomic-storage?user=datomic-user&password=unsafe
 
-      # DATOMIC_DATABASE_2: my-datomic-database-purple
-      # DATOMIC_STORAGE_URI_2: datomic:sql://my-datomic-database-purple?jdbc:postgresql://datomic-storage:5432/my-datomic-storage?user=datomic-user&password=unsafe
+      DATOMIC_DATABASE_2: my-datomic-database-test
+      DATOMIC_STORAGE_URI_2: datomic:sql://my-datomic-database-test?jdbc:postgresql://datomic-storage:5432/my-datomic-storage?user=datomic-user&password=unsafe
 
-      # DATOMIC_DATABASE_3: my-datomic-database-magenta
-      # DATOMIC_STORAGE_URI_3: datomic:sql://my-datomic-database-magenta?jdbc:postgresql://datomic-storage:5432/my-datomic-storage?user=datomic-user&password=unsafe
+      DATOMIC_DATABASE_3: my-datomic-database-test-green
+      DATOMIC_STORAGE_URI_3: datomic:sql://my-datomic-database-test-green?jdbc:postgresql://datomic-storage:5432/my-datomic-storage?user=datomic-user&password=unsafe
+
     ports:
       - 8998:8998
 
-  datomic-console:
-    build: ./docker/console
-    environment:
-      DB_URI: datomic:sql://?jdbc:postgresql://datomic-storage:5432/my-datomic-storage?user=datomic-user&password=unsafe
-    ports:
-      - '8080:8080'
-
-  datomic-flare:
+  datomic-flare-peer:
     build: ./docker/flare
     environment:
       FLARE_PORT: 3042
@@ -52,14 +46,29 @@ services:
 
       FLARE_MODE: peer
       FLARE_PEER_CONNECTION_URI: "datomic:sql://my-datomic-database?jdbc:postgresql://datomic-storage:5432/my-datomic-storage?user=datomic-user&password=unsafe"
-
-      # FLARE_MODE: client
-      # FLARE_CLIENT_ENDPOINT: datomic-peer-server:8998
-      # FLARE_CLIENT_SECRET: unsafe-secret
-      # FLARE_CLIENT_ACCESS_KEY: unsafe-key
-      # FLARE_CLIENT_DATABASE_NAME: my-datomic-database
     ports:
       - 3042:3042
+
+  datomic-flare-client:
+    build: ./docker/flare
+    environment:
+      FLARE_PORT: 3043
+      FLARE_BIND: 0.0.0.0
+
+      FLARE_MODE: client
+      FLARE_CLIENT_ENDPOINT: datomic-peer-server:8998
+      FLARE_CLIENT_SECRET: unsafe-secret
+      FLARE_CLIENT_ACCESS_KEY: unsafe-key
+      FLARE_CLIENT_DATABASE_NAME: my-datomic-database
+    ports:
+      - 3043:3043
+
+  datomic-console:
+    build: ./docker/console
+    environment:
+      DB_URI: datomic:sql://?jdbc:postgresql://datomic-storage:5432/my-datomic-storage?user=datomic-user&password=unsafe
+    ports:
+      - '8080:8080'
 
   datomic-tools:
     build: ./docker/tools

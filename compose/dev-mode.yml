@@ -11,8 +11,6 @@ services:
 
   datomic-peer-server:
     build: ./docker/peer-server
-    links:
-      - datomic-transactor
     environment:
       PORT: 8998
       DATOMIC_ACCESS_KEY: unsafe-key
@@ -24,8 +22,6 @@ services:
 
   datomic-console:
     build: ./docker/console
-    links:
-      - datomic-transactor
     environment:
       DB_URI: datomic:dev://datomic-transactor:4334/?password=unsafe
     ports:
@@ -33,6 +29,3 @@ services:
 
   datomic-tools:
     build: ./docker/tools
-    links:
-      - datomic-transactor
-      - datomic-peer-server
