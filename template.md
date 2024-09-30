@@ -85,33 +85,7 @@ graph RL
 
 ## Index
 
-- [TL;DR and Quick Start](#tldr-and-quick-start)
-- [Index](#index)
-- [Flavors](#flavors)
-  - [Dev Mode](#dev-mode)
-    - [Run the Transactor](#run-the-transactor)
-    - [Create a Database](#create-a-database)
-    - [Transact and Query through an Embedded Peer](#transact-and-query-through-an-embedded-peer)
-    - [Run a Peer Server](#run-a-peer-server)
-    - [Transact and Query through a Peer Server](#transact-and-query-through-a-peer-server)
-  - [PostgreSQL as Storage Service](#postgresql-as-storage-service)
-    - [Run PostgreSQL as the Storage Service](#run-postgresql-as-the-storage-service)
-    - [Run the Transactor](#run-the-transactor)
-    - [Create a Database](#create-a-database)
-    - [Transact and Query through an Embedded Peer](#transact-and-query-through-an-embedded-peer)
-    - [Run a Peer Server](#run-a-peer-server)
-    - [Transact and Query through a Peer Server](#transact-and-query-through-a-peer-server)
-- [Utilities](#utilities)
-  - [REPL](#repl)
-  - [Datomic Console](#datomic-console)
-  - [MusicBrainz Sample Database](#musicbrainz-sample-database)
-    - [Restoring with Dev Mode](#restoring-with-dev-mode)
-      - [Exploring the Data](#exploring-the-data)
-    - [Restoring with PostgreSQL as Storage Service](#restoring-with-postgresql-as-storage-service)
-      - [Exploring the Data](#exploring-the-data)
-- [Development](#development)
-  - [Updating the README](#updating-the-readme)
-  - [Clojure Dependencies](#clojure-dependencies)
+{index}
 
 ## Flavors
 
