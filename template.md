@@ -227,6 +227,18 @@ cp compose/datomic-postgresql.yml docker-compose.yml
 docker compose up datomic-storage
 ```
 
+Create the table for Datomic databases:
+
+```bash
+docker compose run datomic-tools psql \
+  -f bin/sql/postgres-table.sql \
+  -h datomic-storage \
+  -U datomic-user \
+  -d my-datomic-storage
+```
+
+You will be prompted for a password, which is `unsafe`.
+
 #### Run the Transactor
 
 ```sh
