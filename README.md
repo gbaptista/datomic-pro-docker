@@ -2,7 +2,7 @@
 
 Setting up Datomic Pro for Docker with Docker Compose.
 
-![The image features a logo with curved lines forming a whale, suggesting distortion and movement like space-time.](https://media.githubusercontent.com/media/gbaptista/assets/refs/heads/main/datomic-pro-docker/datomic-pro-docker-canvas.jpg)
+![The image features a logo with curved lines forming a whale, suggesting distortion and movement like space-time.](https://raw.githubusercontent.com/gbaptista/assets/refs/heads/main/datomic-pro-docker/datomic-pro-docker-canvas.jpg)
 
 > _As of April 27, 2023, [Datomic Pro is free](https://blog.datomic.com/2023/04/datomic-is-free.html)!_
 
