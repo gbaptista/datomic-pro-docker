@@ -19,17 +19,23 @@ cd datomic-pro-docker
 
 cp compose/datomic-postgresql.yml docker-compose.yml
 
-docker compose up -d datomic-storage
+docker compose up datomic-storage
 
 docker compose run datomic-tools psql \
-  -f bin/sql/postgres-table.sql \
   -h datomic-storage \
   -U datomic-user \
-  -d my-datomic-storage
+  -d my-datomic-storage \
+  -c 'CREATE TABLE datomic_kvs (
+        id TEXT NOT NULL,
+        rev INTEGER,
+        map TEXT,
+        val BYTEA,
+        CONSTRAINT pk_id PRIMARY KEY (id)
+      );'
 
 # password: unsafe
 
-docker compose up -d datomic-transactor
+docker compose up datomic-transactor
 
 docker compose run datomic-tools clojure -M -e "$(cat <<'CLOJURE'
   (require '[datomic.api :as d])
@@ -88,14 +94,14 @@ graph RL
 - [TL;DR and Quick Start](#tldr-and-quick-start)
 - [Index](#index)
 - [Flavors](#flavors)
-  - [Dev Mode](#dev-mode)
+  - [PostgreSQL as Storage Service](#postgresql-as-storage-service)
+    - [Run PostgreSQL as the Storage Service](#run-postgresql-as-the-storage-service)
     - [Run the Transactor](#run-the-transactor)
     - [Create a Database](#create-a-database)
     - [Transact and Query through an Embedded Peer](#transact-and-query-through-an-embedded-peer)
     - [Run a Peer Server](#run-a-peer-server)
     - [Transact and Query through a Peer Server](#transact-and-query-through-a-peer-server)
-  - [PostgreSQL as Storage Service](#postgresql-as-storage-service)
-    - [Run PostgreSQL as the Storage Service](#run-postgresql-as-the-storage-service)
+  - [Dev Mode](#dev-mode)
     - [Run the Transactor](#run-the-transactor)
     - [Create a Database](#create-a-database)
     - [Transact and Query through an Embedded Peer](#transact-and-query-through-an-embedded-peer)
@@ -105,15 +111,170 @@ graph RL
   - [REPL](#repl)
   - [Datomic Console](#datomic-console)
   - [MusicBrainz Sample Database](#musicbrainz-sample-database)
-    - [Restoring with Dev Mode](#restoring-with-dev-mode)
-      - [Exploring the Data](#exploring-the-data)
     - [Restoring with PostgreSQL as Storage Service](#restoring-with-postgresql-as-storage-service)
       - [Exploring the Data](#exploring-the-data)
+    - [Restoring with Dev Mode](#restoring-with-dev-mode)
+      - [Exploring the Data](#exploring-the-data)
 - [Development](#development)
+  - [Principles](#principles)
+    - [First Time to Joy](#first-time-to-joy)
+    - [Predictable and Reliable](#predictable-and-reliable)
+    - [Lightweight Images](#lightweight-images)
   - [Updating the README](#updating-the-readme)
   - [Clojure Dependencies](#clojure-dependencies)
 
 ## Flavors
+
+### PostgreSQL as Storage Service
+
+#### Run PostgreSQL as the Storage Service
+
+```sh
+cp compose/datomic-postgresql.yml docker-compose.yml
+
+docker compose up datomic-storage
+```
+
+Create the table for Datomic databases:
+
+```bash
+docker compose run datomic-tools psql \
+  -h datomic-storage \
+  -U datomic-user \
+  -d my-datomic-storage \
+  -c 'CREATE TABLE datomic_kvs (
+        id TEXT NOT NULL,
+        rev INTEGER,
+        map TEXT,
+        val BYTEA,
+        CONSTRAINT pk_id PRIMARY KEY (id)
+      );'
+```
+
+You will be prompted for a password, which is `unsafe`.
+
+#### Run the Transactor
+
+```sh
+docker compose up datomic-transactor
+```
+
+#### Create a Database
+
+```sh
+docker compose run datomic-tools clojure -M -e "$(cat <<'CLOJURE'
+  (require '[datomic.api :as d])
+  (d/create-database "datomic:sql://my-datomic-database?jdbc:postgresql://datomic-storage:5432/my-datomic-storage?user=datomic-user&password=unsafe")
+  (System/exit 0)
+CLOJURE
+)"
+```
+
+#### Transact and Query through an Embedded Peer
+
+```bash
+docker compose run datomic-tools clojure -M:repl
+```
+
+```mermaid
+graph RL
+    Transactor --- Storage[(Storage)]
+    REPL("REPL (Peer)") -.- Storage
+    REPL --- Transactor
+```
+
+```clojure
+(require '[datomic.api :as d])
+
+(def connection (d/connect "datomic:sql://my-datomic-database?jdbc:postgresql://datomic-storage:5432/my-datomic-storage?user=datomic-user&password=unsafe"))
+
+@(d/transact connection
+  [{:db/ident       :book/title
+    :db/valueType   :db.type/string
+    :db/cardinality :db.cardinality/one
+    :db/doc         "The title of the book."}
+
+   {:db/ident       :book/genre
+    :db/valueType   :db.type/string
+    :db/cardinality :db.cardinality/one
+    :db/doc         "The genre of the book."}])
+
+@(d/transact connection
+  [{:db/id      -1
+    :book/title "The Tell-Tale Heart"
+    :book/genre "Horror"}])
+
+(def database (d/db connection))
+
+(d/q '[:find ?e ?title ?genre
+       :where [?e :book/title ?title]
+              [?e :book/genre ?genre]]
+     database)
+
+; #{[4611681620380877802 "The Tell-Tale Heart" "Horror"]}
+
+(System/exit 0)
+```
+
+#### Run a Peer Server
+
+```bash
+docker compose up datomic-peer-server
+```
+
+#### Transact and Query through a Peer Server
+
+```bash
+docker compose run datomic-tools clojure -M:repl
+```
+
+```mermaid
+graph RL
+    Transactor --- Storage
+    PeerServer --- Transactor
+    PeerServer -.- Storage
+    REPL(REPL) --- PeerServer[Peer Server]
+```
+
+```clojure
+(require '[datomic.client.api :as d])
+
+(def client
+  (d/client {:server-type :peer-server
+             :endpoint    "datomic-peer-server:8998"
+             :secret      "unsafe-secret"
+             :access-key  "unsafe-key"
+             :validate-hostnames false}))
+
+(def connection (d/connect client {:db-name "my-datomic-database"}))
+
+(d/transact connection
+  {:tx-data [{:db/ident       :book/title
+              :db/valueType   :db.type/string
+              :db/cardinality :db.cardinality/one
+              :db/doc         "The title of the book."}
+
+             {:db/ident       :book/genre
+              :db/valueType   :db.type/string
+              :db/cardinality :db.cardinality/one
+              :db/doc         "The genre of the book."}]})
+
+(d/transact connection
+  {:tx-data [{:db/id      -1
+              :book/title "The Tell-Tale Heart"
+              :book/genre "Horror"}]})
+
+(def database (d/db connection))
+
+(d/q '[:find ?e ?title ?genre
+       :where [?e :book/title ?title]
+              [?e :book/genre ?genre]]
+     database)
+
+; #{[4611681620380877802 "The Tell-Tale Heart" "Horror"]}
+
+(System/exit 0)
+```
 
 ### Dev Mode
 
@@ -185,7 +346,7 @@ graph RL
 #### Run a Peer Server
 
 ```bash
-docker compose up -d datomic-peer-server
+docker compose up datomic-peer-server
 ```
 
 #### Transact and Query through a Peer Server
@@ -201,151 +362,6 @@ graph RL
     PeerServer -.- Transactor
     REPL --- PeerServer
     REPL -.- PeerServer
-```
-
-```clojure
-(require '[datomic.client.api :as d])
-
-(def client
-  (d/client {:server-type :peer-server
-             :endpoint    "datomic-peer-server:8998"
-             :secret      "unsafe-secret"
-             :access-key  "unsafe-key"
-             :validate-hostnames false}))
-
-(def connection (d/connect client {:db-name "my-datomic-database"}))
-
-(d/transact connection
-  {:tx-data [{:db/ident       :book/title
-              :db/valueType   :db.type/string
-              :db/cardinality :db.cardinality/one
-              :db/doc         "The title of the book."}
-
-             {:db/ident       :book/genre
-              :db/valueType   :db.type/string
-              :db/cardinality :db.cardinality/one
-              :db/doc         "The genre of the book."}]})
-
-(d/transact connection
-  {:tx-data [{:db/id      -1
-              :book/title "The Tell-Tale Heart"
-              :book/genre "Horror"}]})
-
-(def database (d/db connection))
-
-(d/q '[:find ?e ?title ?genre
-       :where [?e :book/title ?title]
-              [?e :book/genre ?genre]]
-     database)
-
-; #{[4611681620380877802 "The Tell-Tale Heart" "Horror"]}
-
-(System/exit 0)
-```
-
-### PostgreSQL as Storage Service
-
-#### Run PostgreSQL as the Storage Service
-
-```sh
-cp compose/datomic-postgresql.yml docker-compose.yml
-
-docker compose up datomic-storage
-```
-
-Create the table for Datomic databases:
-
-```bash
-docker compose run datomic-tools psql \
-  -f bin/sql/postgres-table.sql \
-  -h datomic-storage \
-  -U datomic-user \
-  -d my-datomic-storage
-```
-
-You will be prompted for a password, which is `unsafe`.
-
-#### Run the Transactor
-
-```sh
-docker compose up datomic-transactor
-```
-
-#### Create a Database
-
-```sh
-docker compose run datomic-tools clojure -M -e "$(cat <<'CLOJURE'
-  (require '[datomic.api :as d])
-  (d/create-database "datomic:sql://my-datomic-database?jdbc:postgresql://datomic-storage:5432/my-datomic-storage?user=datomic-user&password=unsafe")
-  (System/exit 0)
-CLOJURE
-)"
-```
-
-#### Transact and Query through an Embedded Peer
-
-```bash
-docker compose run datomic-tools clojure -M:repl
-```
-
-```mermaid
-graph RL
-    Transactor --- Storage[(Storage)]
-    REPL("REPL (Peer)") -.- Storage
-    REPL --- Transactor
-```
-
-```clojure
-(require '[datomic.api :as d])
-
-(def connection (d/connect "datomic:sql://my-datomic-database?jdbc:postgresql://datomic-storage:5432/my-datomic-storage?user=datomic-user&password=unsafe"))
-
-@(d/transact connection
-  [{:db/ident       :book/title
-    :db/valueType   :db.type/string
-    :db/cardinality :db.cardinality/one
-    :db/doc         "The title of the book."}
-
-   {:db/ident       :book/genre
-    :db/valueType   :db.type/string
-    :db/cardinality :db.cardinality/one
-    :db/doc         "The genre of the book."}])
-
-@(d/transact connection
-  [{:db/id      -1
-    :book/title "The Tell-Tale Heart"
-    :book/genre "Horror"}])
-
-(def database (d/db connection))
-
-(d/q '[:find ?e ?title ?genre
-       :where [?e :book/title ?title]
-              [?e :book/genre ?genre]]
-     database)
-
-; #{[4611681620380877802 "The Tell-Tale Heart" "Horror"]}
-
-(System/exit 0)
-```
-
-#### Run a Peer Server
-
-```bash
-docker compose up -d datomic-peer-server
-```
-
-#### Transact and Query through a Peer Server
-
-```bash
-docker compose run datomic-tools clojure -M:repl
-```
-
-```mermaid
-graph RL
-    Transactor --- Storage
-    PeerServer --- Transactor
-    PeerServer -.- Storage
-    REPL(REPL) --- PeerServer[Peer Server]
 ```
 
 ```clojure
@@ -420,66 +436,14 @@ The MusicBrainz Sample Database, sourced from the open music encyclopedia [Music
 
 A backup is already included in the `datomic-tools` image; to restore it:
 
-#### Restoring with Dev Mode
-
-```sh
-docker compose run datomic-tools \
-  ./bin/datomic restore-db \
-  file:/usr/mbrainz-1968-1973 \
-  "datomic:dev://datomic-transactor:4334/my-datomic-database?password=unsafe"
-```
-
-If you are receiving:
-```txt
-:restore/collision The name 'my-datomic-database' is already in use
-```
-
-You need to delete the current database so you can restore a new one:
-
-```bash
-docker compose run datomic-tools clojure -M -e "$(cat <<'CLOJURE'
-  (require '[datomic.api :as d])
-  (d/delete-database "datomic:dev://datomic-transactor:4334/my-datomic-database?password=unsafe")
-  (System/exit 0)
-CLOJURE
-)"
-```
-
-##### Exploring the Data
-
-```bash
-docker compose run datomic-tools clojure -M:repl
-```
-
-```clojure
-(require '[datomic.api :as d])
-
-(def connection (d/connect "datomic:dev://datomic-transactor:4334/my-datomic-database?password=unsafe"))
-
-(def database (d/db connection))
-
-(d/q '[:find ?id ?type ?gender
-         :in $ ?name
-       :where
-         [?e :artist/name ?name]
-         [?e :artist/gid ?id]
-         [?e :artist/type ?teid]
-         [?teid :db/ident ?type]
-         [?e :artist/gender ?geid]
-         [?geid :db/ident ?gender]]
-     database
-     "Jimi Hendrix")
-
-(System/exit 0)
-```
-
 #### Restoring with PostgreSQL as Storage Service
 
 ```sh
 docker compose run datomic-tools \
+  sh -c "/usr/download-mbrainz.sh && \
   ./bin/datomic restore-db \
   file:/usr/mbrainz-1968-1973 \
-  "datomic:sql://my-datomic-database?jdbc:postgresql://datomic-storage:5432/my-datomic-storage?user=datomic-user&password=unsafe"
+  'datomic:sql://my-datomic-database?jdbc:postgresql://datomic-storage:5432/my-datomic-storage?user=datomic-user&password=unsafe'"
 ```
 
 If you are receiving:
@@ -526,7 +490,75 @@ docker compose run datomic-tools clojure -M:repl
 (System/exit 0)
 ```
 
+#### Restoring with Dev Mode
+
+```sh
+docker compose run datomic-tools \
+  sh -c "/usr/download-mbrainz.sh && \
+  ./bin/datomic restore-db \
+  file:/usr/mbrainz-1968-1973 \
+  'datomic:dev://datomic-transactor:4334/my-datomic-database?password=unsafe'"
+```
+
+If you are receiving:
+```txt
+:restore/collision The name 'my-datomic-database' is already in use
+```
+
+You need to delete the current database so you can restore a new one:
+
+```bash
+docker compose run datomic-tools clojure -M -e "$(cat <<'CLOJURE'
+  (require '[datomic.api :as d])
+  (d/delete-database "datomic:dev://datomic-transactor:4334/my-datomic-database?password=unsafe")
+  (System/exit 0)
+CLOJURE
+)"
+```
+
+##### Exploring the Data
+
+```bash
+docker compose run datomic-tools clojure -M:repl
+```
+
+```clojure
+(require '[datomic.api :as d])
+
+(def connection (d/connect "datomic:dev://datomic-transactor:4334/my-datomic-database?password=unsafe"))
+
+(def database (d/db connection))
+
+(d/q '[:find ?id ?type ?gender
+         :in $ ?name
+       :where
+         [?e :artist/name ?name]
+         [?e :artist/gid ?id]
+         [?e :artist/type ?teid]
+         [?teid :db/ident ?type]
+         [?e :artist/gender ?geid]
+         [?geid :db/ident ?gender]]
+     database
+     "Jimi Hendrix")
+
+(System/exit 0)
+```
+
 ## Development
+
+### Principles
+
+#### First Time to Joy
+
+From cloning the repository to running 'hello world,' the goal is to minimize setup and boot time. Download delays, long build or boot times, and flakiness are obstacles.
+
+#### Predictable and Reliable
+
+Assets must state version numbers and be verified with MD5 checksums to ensure integrity and security.
+
+#### Lightweight Images
+
+Minimize Docker image size with lightweight base images and multi-stage builds.
 
 ### Updating the README
 
