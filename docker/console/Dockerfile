@@ -1,15 +1,18 @@
 FROM clojure:temurin-22-tools-deps-bookworm-slim
 
-RUN apt-get update && apt-get install -y curl unzip iputils-ping && rm -rf /var/lib/apt/lists/*
+  RUN apt-get update && apt-get install -y curl unzip && rm -rf /var/lib/apt/lists/*
 
-RUN curl -s https://raw.githubusercontent.com/babashka/babashka/master/install | bash
+  RUN curl https://d21wuulm8q5nm1.cloudfront.net/1.0.7187/datomic-pro-1.0.7187.zip \
+        -o datomic-pro.zip \
+        && echo "1107dc89c3bc0896a02458d34a875143  datomic-pro.zip" | md5sum -c - \
+        && unzip datomic-pro.zip \
+        && mv datomic-pro-1.0.7187 /usr/datomic-pro \
+        || exit 1
 
-RUN curl \
-      https://datomic-pro-downloads.s3.amazonaws.com/1.0.7187/datomic-pro-1.0.7187.zip \
-      -o datomic-pro.zip \
-      && unzip datomic-pro.zip \
-      && mv datomic-pro-1.0.7187 /usr/datomic-pro
+FROM clojure:temurin-22-tools-deps-bookworm-slim
 
-WORKDIR /usr/datomic-pro
+  COPY --from=0 /usr/datomic-pro /usr/datomic-pro
 
-CMD bin/console -p 8080 dev $DB_URI
+  WORKDIR /usr/datomic-pro
+
+  CMD bin/console -p 8080 dev $DB_URI
