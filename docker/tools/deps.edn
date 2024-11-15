@@ -2,7 +2,8 @@
         com.datomic/peer          {:mvn/version "1.0.7187"}
         com.datomic/client-pro    {:mvn/version "1.0.81"}
         org.postgresql/postgresql {:mvn/version "42.7.4"}
-        org.slf4j/slf4j-simple    {:mvn/version "2.0.16"}}
+        org.slf4j/slf4j-simple    {:mvn/version "2.0.16"}
+        org.xerial/sqlite-jdbc    {:mvn/version "3.47.0.0"}}
 
  :aliases {:repl {:extra-deps { com.bhauman/rebel-readline {:mvn/version "0.1.4" }}
                   :main-opts  ["-m" "rebel-readline.main"]}}}

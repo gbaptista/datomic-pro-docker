@@ -374,6 +374,145 @@ graph RL
 (System/exit 0)
 ```
 
+### SQLite as Storage Service
+
+#### Create the SQLite database file
+
+Copy the sqlite compose file:
+
+```bash
+cp compose/datomic-sqlite.yml docker-compose.yml
+```
+
+Create `sqlite/datomic-storage.db` with the table for Datomic databases:
+
+```bash
+./sqlite/create.sh
+```
+
+#### Run the Transactor
+
+```sh
+docker compose up datomic-transactor
+```
+
+#### Create a Database
+
+```sh
+docker compose run datomic-tools clojure -M -e "$(cat <<'CLOJURE'
+  (require '[datomic.api :as d])
+  (d/create-database "datomic:sql://my-datomic-database?jdbc:sqlite:/usr/sqlite/datomic-storage.db")
+  (System/exit 0)
+CLOJURE
+)"
+```
+
+#### Transact and Query through an Embedded Peer
+
+```bash
+docker compose run datomic-tools clojure -M:repl
+```
+
+```mermaid
+graph RL
+    Transactor --- Storage[(Storage)]
+    REPL("REPL (Peer)") -.- Storage
+    REPL --- Transactor
+```
+
+```clojure
+(require '[datomic.api :as d])
+
+(def connection (d/connect "datomic:sql://my-datomic-database?jdbc:sqlite:/usr/sqlite/datomic-storage.db"))
+
+@(d/transact connection
+  [{:db/ident       :book/title
+    :db/valueType   :db.type/string
+    :db/cardinality :db.cardinality/one
+    :db/doc         "The title of the book."}
+
+   {:db/ident       :book/genre
+    :db/valueType   :db.type/string
+    :db/cardinality :db.cardinality/one
+    :db/doc         "The genre of the book."}])
+
+@(d/transact connection
+  [{:db/id      -1
+    :book/title "The Tell-Tale Heart"
+    :book/genre "Horror"}])
+
+(def database (d/db connection))
+
+(d/q '[:find ?e ?title ?genre
+       :where [?e :book/title ?title]
+              [?e :book/genre ?genre]]
+     database)
+
+; #{[4611681620380877802 "The Tell-Tale Heart" "Horror"]}
+
+(System/exit 0)
+```
+
+#### Run a Peer Server
+
+```bash
+docker compose up datomic-peer-server
+```
+
+#### Transact and Query through a Peer Server
+
+```bash
+docker compose run datomic-tools clojure -M:repl
+```
+
+```mermaid
+graph RL
+    Transactor --- Storage
+    PeerServer --- Transactor
+    PeerServer -.- Storage
+    REPL(REPL) --- PeerServer[Peer Server]
+```
+
+```clojure
+(require '[datomic.client.api :as d])
+
+(def client
+  (d/client {:server-type :peer-server
+             :endpoint    "datomic-peer-server:8998"
+             :secret      "unsafe-secret"
+             :access-key  "unsafe-key"
+             :validate-hostnames false}))
+
+(def connection (d/connect client {:db-name "my-datomic-database"}))
+
+(d/transact connection
+  {:tx-data [{:db/ident       :book/title
+              :db/valueType   :db.type/string
+              :db/cardinality :db.cardinality/one
+              :db/doc         "The title of the book."}
+
+             {:db/ident       :book/genre
+              :db/valueType   :db.type/string
+              :db/cardinality :db.cardinality/one
+              :db/doc         "The genre of the book."}]})
+
+(d/transact connection
+  {:tx-data [{:db/id      -1
+              :book/title "The Tell-Tale Heart"
+              :book/genre "Horror"}]})
+
+(def database (d/db connection))
+
+(d/q '[:find ?e ?title ?genre
+       :where [?e :book/title ?title]
+              [?e :book/genre ?genre]]
+     database)
+
+; #{[4611681620380877802 "The Tell-Tale Heart" "Horror"]}
+
+(System/exit 0)
+```
+
 ## Utilities
 
 ### REPL

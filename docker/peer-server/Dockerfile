@@ -9,6 +9,12 @@ FROM clojure:temurin-22-tools-deps-bookworm-slim
         && mv datomic-pro-1.0.7187 /usr/datomic-pro \
         || exit 1
 
+  RUN curl -L https://github.com/xerial/sqlite-jdbc/releases/download/3.47.0.0/sqlite-jdbc-3.47.0.0.jar \
+        -o sqlite-jdbc-3.47.0.0.jar \
+        && echo "93d47c006377c476f8f7b45d00d20606b77d5951423f346ef56b5b081361c2d3  sqlite-jdbc-3.47.0.0.jar" | sha256sum -c - \
+        && mv sqlite-jdbc-3.47.0.0.jar /usr/datomic-pro/lib \
+        || exit 1        
+
 FROM clojure:temurin-22-tools-deps-bookworm-slim
 
   COPY --from=0 /usr/datomic-pro /usr/datomic-pro

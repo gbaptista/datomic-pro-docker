@@ -1,0 +1,60 @@
+services:
+
+  datomic-transactor:
+    build: ./docker/transactor
+    environment:
+      BOOT_CONFIG_EDN: /usr/config/postgresql/config.edn
+    volumes:
+      - ./config:/usr/config
+      - ./sqlite:/usr/sqlite      
+    ports:
+      - '4334:4334'
+
+  datomic-peer-server:
+    build: ./docker/peer-server
+    volumes:
+      - ./sqlite:/usr/sqlite
+    environment:
+      PORT: 8998
+
+      DATOMIC_ACCESS_KEY: unsafe-key
+      DATOMIC_SECRET: unsafe-secret
+
+      DATOMIC_DATABASE: my-datomic-database
+      DATOMIC_STORAGE_URI: datomic:sql://my-datomic-database?jdbc:sqlite:/usr/sqlite/datomic-storage.db
+
+    ports:
+      - 8998:8998
+
+  datomic-console:
+    build: ./docker/console
+    volumes:
+      - ./sqlite:/usr/sqlite    
+    environment:
+      DB_URI: datomic:sql://my-datomic-database?jdbc:sqlite:/usr/sqlite/datomic-storage.db
+    ports:
+      - '8080:8080'
+
+  datomic-flare:
+    build: ./docker/flare
+    volumes:
+      - ./sqlite:/usr/sqlite    
+    environment:
+      FLARE_PORT: 3042
+      FLARE_BIND: 0.0.0.0
+
+      FLARE_MODE: peer
+      FLARE_PEER_CONNECTION_URI: "datomic:sql://my-datomic-database?jdbc:sqlite:/usr/sqlite/datomic-storage.db"
+
+      # FLARE_MODE: client
+      # FLARE_CLIENT_ENDPOINT: datomic-peer-server:8998
+      # FLARE_CLIENT_SECRET: unsafe-secret
+      # FLARE_CLIENT_ACCESS_KEY: unsafe-key
+      # FLARE_CLIENT_DATABASE_NAME: my-datomic-database
+    ports:
+      - 3042:3042
+
+  datomic-tools:
+    build: ./docker/tools
+    volumes:
+      - ./sqlite:/usr/sqlite    

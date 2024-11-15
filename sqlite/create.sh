@@ -1,0 +1,1 @@
+sqlite3 sqlite/datomic-storage.db < sqlite/create-datomic-kvs.sql

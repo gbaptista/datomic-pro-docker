@@ -1,0 +1,3 @@
+{:config-template "/usr/datomic-pro/config/samples/sql-transactor-template.properties"
+ :apply-configs-from "/usr/config/sqlite/transactor.properties"
+ :host-ip '?host-ip }
